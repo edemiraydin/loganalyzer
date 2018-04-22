@@ -9,7 +9,8 @@ import time
 from datetime import datetime
 import argparse
 import json
-
+from pyspark.storagelevel import StorageLevel
+from pyspark.sql import SQLContext
 
 #########################################
 # 04/18/2018  E. Johnson    
@@ -29,40 +30,58 @@ import json
 # checkpoint data exists in ~/checkpoint/, then it will create StreamingContext from
 # the checkpoint data.
 ##########################################
-def analyze_ip_count(dstream):
-	#Check counts of IPs by key
-	r1_parsed= parsed.map(lambda log: (log['clientip'],1)).\
-			reduceByKey(lambda x,y: x + y)
-		
-	# Get a list of potential malicious IPs based on Rule 1
-	return r1_parsed.filter(lambda (k,v): v >= 10)
+
+
+def getSqlContextInstance(sparkContext):
+    if ('sqlContextSingletonInstance' not in globals()):
+        globals()['sqlContextSingletonInstance'] = SQLContext(sc)
+    return globals()['sqlContextSingletonInstance']
 	
+#Upsert distinct IP, OS pairs (30 sec) into a Kudu table 
+def insert_into_kudu(time,rdd):
+    sqc = getSqlContextInstance(rdd.context)
+    kudu_df = rdd.toDF(['ip','os']).dropDuplicates()
+	#kudu_df.write.format('org.apache.kudu.spark.kudu').option('kudu.master',"ip:7051").option('kudu.table',"ip_counts_last_30").mode("append").save()
+
 	
 if __name__ == "__main__":
 	if len(sys.argv) != 5:
 		print("Usage: analyze.py "
-             "<broker-list> <checkpoint-directory> <output-file> <topic>", file=sys.stderr)
+             "<broker-list> <checkpoint-directory> <output-file> <topic> ", file=sys.stderr)
 		sys.exit(-1)
 	
+	brokers, checkpoint, output, topic = sys.argv[1:]
 	
-	sc = SparkContext(appName="LogAnalyzer")
+	
+	sc = SparkContext(appName="LogAnalyzer")	
+
 	ssc = StreamingContext(sc, 30)
 	ssc.checkpoint('checkpoint')
 	 
-	brokers, checkpoint, output, topic = sys.argv[1:]
-	
-	# Create Kafka DStream
+ 	# Create Kafka DStream
 	kvs=KafkaUtils.createStream(ssc, brokers, checkpoint, {topic: 1})
 
 	#Get a DStream of JSON log entries
 	parsed = kvs.map(lambda v: json.loads(v))	
+	#Check counts of IPs by key
+	r1_parsed= parsed.map(lambda log: (log['clientip'],1)).\
+			reduceByKey(lambda x,y: x + y)
 	
-	bad_ips1=analyze_ip_count(parsed) 		
+		
+	# Count the number of distinct os values per ip
+	r2_parsed= parsed.map(lambda a: (str(a['clientip']), str(a['os'])))
+
+	#r2_parsed.foreachRDD(insert_into_kudu)
+	r2_parsed.pprint()
 	
+	# Get a list of potential malicious IPs based on Rule 1
+	bad_ips1 = r1_parsed.filter(lambda (k,v): v >= 10)
+	
+ 	
 	# Write results to HDFS 
 	if bad_ips1.count()>0:
 		bad_ips1.saveAsTextFiles('ddos_output_rule1')
-
+	
 	
 	#Start the execution of the streams.
 	ssc.start()
