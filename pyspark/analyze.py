@@ -8,6 +8,7 @@ from pyspark.streaming.kafka import KafkaUtils
 import time
 from datetime import datetime
 import argparse
+import json
 
 
 #########################################
@@ -29,26 +30,13 @@ import argparse
 # the checkpoint data.
 ##########################################
 
-def get_ip(msg):
-    message = json.loads(msg)
-    return message['clientip'], 1
-
-def get_ip_agent(msg):
-    message = json.loads(msg)
-    return message['clientip'], message['agent']
-	
-def update_frequency(new_entry, freq_sum):
-  if not freq_sum:
-    freq_sum = 0
-  return sum(new_entry) + freq_sum
-
-
 if __name__ == "__main__":
 	if len(sys.argv) != 5:
 		print("Usage: analyze.py "
              "<broker-list> <checkpoint-directory> <output-file> <topic>", file=sys.stderr)
 		sys.exit(-1)
-	start=datetime.now()
+	
+	
 	sc = SparkContext(appName="LogAnalyzer")
 	ssc = StreamingContext(sc, 2)
 	ssc.checkpoint('checkpoint')
@@ -57,19 +45,15 @@ if __name__ == "__main__":
 	
 	# Create Kafka DStream
 	kvs=KafkaUtils.createStream(ssc, brokers, checkpoint, {topic: 1})
-	#kvs.pprint()
-
 	#Get a DStream of JSON log entries
-	parsed = kvs.map(lambda v: json.loads(v[1]))
-	
+	parsed = kvs.map(lambda v: json.loads(v))	
 	#Check counts of IPs by key
 	r1_parsed= parsed.map(lambda log: (log['clientip'],1)).\
 			reduceByKey(lambda x,y: x + y)
 	
-	#Get a DStream of clientip, agent
-	
-	# Count the number of agent values per ip
-	r2_parsed= parsed.map(lambda a: (a['clientip']['agent'],1)).\
+		
+	# Count the number of distinct os values per ip
+	r2_parsed= parsed.map(lambda a: (a['clientip']['os'],1)).\
 			reduceByKey(lambda x,y: x + y)
 
 	
@@ -83,7 +67,8 @@ if __name__ == "__main__":
 	
 	
 	# Write results to HDFS 
-	rule1.saveAsTextFiles('ddos_output')
+	bad_ips1.saveAsTextFiles('ddos_output_rule1')
+	bad_ips2.saveAsTextFiles('ddos_output_rule2')
 	
 	#Start the execution of the streams.
 	ssc.start()
