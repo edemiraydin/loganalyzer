@@ -15,8 +15,8 @@ from pyspark.sql import SQLContext
 #########################################
 # 04/18/2018  E. Johnson    
 # Spark Streaming code to stream ip,timestamp (from Apache logs)
-# and analyze them for a potential DoS attack
-# The rule to identify a possible DoS attack is checking for 5 or more attempts in one minute.
+# and analyze them for a potential DoS attack. The unique IP, os entries will be upserted into a Kudu table
+# THIS CODE IS IN PROGRESS 
 # Usage: analyze.py <zk> <checkpoint-directory> <output-file> <topic>
 #  <zk> describe the list of Kafka Brokers
 #   <checkpoint-directory> directory to HDFS-compatible file system which checkpoint data
@@ -63,25 +63,14 @@ if __name__ == "__main__":
 
 	#Get a DStream of JSON log entries
 	parsed = kvs.map(lambda v: json.loads(v))	
-	#Check counts of IPs by key
-	r1_parsed= parsed.map(lambda log: (log['clientip'],1)).\
-			reduceByKey(lambda x,y: x + y)
-	
+	 
 		
 	# Count the number of distinct os values per ip
 	r2_parsed= parsed.map(lambda a: (str(a['clientip']), str(a['os'])))
 
-	#r2_parsed.foreachRDD(insert_into_kudu)
-	r2_parsed.pprint()
-	
-	# Get a list of potential malicious IPs based on Rule 1
-	bad_ips1 = r1_parsed.filter(lambda (k,v): v >= 10)
-	
- 	
-	# Write results to HDFS 
-	if bad_ips1.count()>0:
-		bad_ips1.saveAsTextFiles('ddos_output_rule1')
-	
+	r2_parsed.foreachRDD(insert_into_kudu)
+	 
+		
 	
 	#Start the execution of the streams.
 	ssc.start()
