@@ -29,7 +29,14 @@ import argparse
 # the checkpoint data.
 ##########################################
 
+def get_ip(msg):
+    message = json.loads(msg)
+    return message['clientip'], 1
 
+def get_ip_agent(msg):
+    message = json.loads(msg)
+    return message['clientip'], message['agent']
+	
 def update_frequency(new_entry, freq_sum):
   if not freq_sum:
     freq_sum = 0
@@ -45,31 +52,40 @@ if __name__ == "__main__":
 	sc = SparkContext(appName="LogAnalyzer")
 	ssc = StreamingContext(sc, 2)
 	ssc.checkpoint('checkpoint')
-	
+	 
 	brokers, checkpoint, output, topic = sys.argv[1:]
-	kvs=KafkaUtils.createStream(ssc, 'ahlclotxpla706.evv1.ah-isd.net:2181,ahlclotxpla705.evv1.ah-isd.net:2181,ahlclotxpla707.evv1.ah-isd.net:2181/kafka', 'test6', {topic: 1})
-	kvs.pprint()
+	
+	# Create Kafka DStream
+	kvs=KafkaUtils.createStream(ssc, brokers, checkpoint, {topic: 1})
+	#kvs.pprint()
 
-	# parsed = kvs.map(lambda x: x[1])
-	# lines = kvs.map(lambda x: x[1])
-	# counts = lines.flatMap(lambda line: line.split(",")).map(lambda word: (word, 1)).reduceByKey(lambda a, b: a+b)
-	# counts.pprint()
-	# updated = parsed.updateStateByKey(update_frequency)
-	# updated2 = updated.map(lambda (k,v): (str(k), v))
-	# #high_freq = updated2.filter(lambda (k,v): v >= 85)
-	# updated2.pprint()
-	#high_freq.saveAsTextFiles('DDOS_attacker_found_output')
+	#Get a DStream of JSON log entries
+	parsed = kvs.map(lambda v: json.loads(v[1]))
+	
+	#Check counts of IPs by key
+	r1_parsed= parsed.map(lambda log: (log['clientip'],1)).\
+			reduceByKey(lambda x,y: x + y)
+	
+	#Get a DStream of clientip, agent
+	
+	# Count the number of agent values per ip
+	r2_parsed= parsed.map(lambda a: (a['clientip']['agent'],1)).\
+			reduceByKey(lambda x,y: x + y)
+
+	
+	# Get a list of potential malicious IPs based on Rule 1
+	bad_ips1 = r1_parsed.filter(lambda (k,v): v >= 10)
+	bad_ips1.pprint()
+ 
+	# Get a list of potential malicious IPs based on Rule 2
+	bad_ips2 = r2_parsed.filter(lambda (k,v): v >= 10)
+	bad_ips2.pprint()
+	
+	
+	# Write results to HDFS 
+	rule1.saveAsTextFiles('ddos_output')
+	
+	#Start the execution of the streams.
 	ssc.start()
-	#time.sleep(60)
-	#ssc.stop()
-	#ssc.awaitTermination()
-	#print('Process ended.')
-	#print('Time taken:', datetime.now()-start)
-	#countStream = logStream.countByWindow(5,2)
-   # countStream.pprint()
-	#counts = lines.flatMap(lambda line: line.split(",")) \
-    #   .map(lambda word: (word, 1)) \
-    #    .reduceByKey(lambda a, b: a+b)
-	#counts.pprint()
-	#ssc.start()
-	#ssc.awaitTermination()
+	# Wait for the execution to stop.
+	ssc.awaitTermination()

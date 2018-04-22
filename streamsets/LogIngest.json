@@ -2,10 +2,10 @@
   "pipelineConfig" : {
     "schemaVersion" : 5,
     "version" : 8,
-    "pipelineId" : "Testinga5958afc-5e7d-4d64-891d-7042ba2175c5",
+    "pipelineId" : "LogIngestcopy5adc3e97-735f-4956-950c-117bb9a81bb7",
     "title" : "LogIngest",
     "description" : "",
-    "uuid" : "0b5fed5a-0a57-4862-8409-42e7e1dfbd33",
+    "uuid" : "806c82c9-ee23-41f1-8928-984ed49dd64c",
     "configuration" : [ {
       "name" : "executionMode",
       "value" : "STANDALONE"
@@ -334,7 +334,7 @@
       } ],
       "uiInfo" : {
         "outputStreamLabels" : [ "Data", "Metadata" ],
-        "yPos" : 86,
+        "yPos" : 150,
         "stageType" : "SOURCE",
         "rawSource" : {
           "configuration" : [ {
@@ -343,7 +343,7 @@
         },
         "description" : "",
         "label" : "Apache Log Directory",
-        "xPos" : 202
+        "xPos" : 262
       },
       "inputLanes" : [ ],
       "outputLanes" : [ "FileTail_01OutputLane15240188562930", "FileTail_01OutputLane15240188562931" ],
@@ -358,8 +358,8 @@
       "uiInfo" : {
         "description" : "",
         "label" : "Ignore metadata",
-        "xPos" : 488,
-        "yPos" : 222,
+        "xPos" : 510.610595703125,
+        "yPos" : 255.5958251953125,
         "stageType" : "TARGET"
       },
       "inputLanes" : [ "FileTail_01OutputLane15240188562931" ],
@@ -376,7 +376,7 @@
         "value" : "KEEP"
       }, {
         "name" : "fields",
-        "value" : [ "/clientip", "/timestamp" ]
+        "value" : [ "/clientip", "/timestamp", "/agent" ]
       }, {
         "name" : "stageRequiredFields",
         "value" : [ ]
@@ -387,8 +387,8 @@
       "uiInfo" : {
         "description" : "",
         "label" : "Keep clientip and timestamp",
-        "xPos" : 485,
-        "yPos" : 81,
+        "xPos" : 538.1892700195312,
+        "yPos" : 92.34696960449219,
         "stageType" : "PROCESSOR"
       },
       "inputLanes" : [ "FileTail_01OutputLane15240188562930" ],
@@ -443,8 +443,8 @@
       "uiInfo" : {
         "description" : "",
         "label" : "Timestamp type/format conversion",
-        "xPos" : 692,
-        "yPos" : 85,
+        "xPos" : 748.233154296875,
+        "yPos" : 90.41728210449219,
         "stageType" : "PROCESSOR"
       },
       "inputLanes" : [ "FieldRemover_01OutputLane15240694411530" ],
@@ -459,12 +459,12 @@
       "configuration" : [ {
         "name" : "expressionProcessorConfigs",
         "value" : [ {
-          "fieldToSet" : "/text",
-          "expression" : "${str:concat(str:concat(record:value('/clientip'), ','),record:value('/timestamp')) }"
+          "fieldToSet" : "/os",
+          "expression" : "${str:regExCapture(record:value('/agent'),'\\\\(([^(]*)\\\\)', 1)}"
         } ]
       }, {
         "name" : "headerAttributeConfigs",
-        "value" : [ { } ]
+        "value" : [ { }, { } ]
       }, {
         "name" : "fieldAttributeConfigs",
         "value" : [ {
@@ -482,13 +482,45 @@
       } ],
       "uiInfo" : {
         "description" : "",
-        "label" : "Build comma separated text field",
-        "xPos" : 905,
-        "yPos" : 83,
+        "label" : "Add OS field",
+        "xPos" : 931,
+        "yPos" : 93,
         "stageType" : "PROCESSOR"
       },
       "inputLanes" : [ "FieldTypeConverter_01OutputLane15240697906310" ],
-      "outputLanes" : [ "ExpressionEvaluator_01OutputLane15240717312690" ],
+      "outputLanes" : [ "ExpressionEvaluator_01OutputLane15242760094740" ],
+      "eventLanes" : [ ],
+      "services" : [ ]
+    }, {
+      "instanceName" : "JSONGenerator_01",
+      "library" : "streamsets-datacollector-basic-lib",
+      "stageName" : "com_streamsets_pipeline_stage_processor_jsongenerator_JsonGeneratorDProcessor",
+      "stageVersion" : "1",
+      "configuration" : [ {
+        "name" : "fieldPathToSerialize",
+        "value" : "/"
+      }, {
+        "name" : "outputFieldPath",
+        "value" : "/text"
+      }, {
+        "name" : "stageOnRecordError",
+        "value" : "TO_ERROR"
+      }, {
+        "name" : "stageRequiredFields",
+        "value" : [ ]
+      }, {
+        "name" : "stageRecordPreconditions",
+        "value" : [ ]
+      } ],
+      "uiInfo" : {
+        "description" : "",
+        "label" : "JSON Generator",
+        "xPos" : 1114.7563424260893,
+        "yPos" : 94.3040861027456,
+        "stageType" : "PROCESSOR"
+      },
+      "inputLanes" : [ "ExpressionEvaluator_01OutputLane15242760094740" ],
+      "outputLanes" : [ "JSONGenerator_01OutputLane15242560883350" ],
       "eventLanes" : [ ],
       "services" : [ ]
     }, {
@@ -498,7 +530,7 @@
       "stageVersion" : "3",
       "configuration" : [ {
         "name" : "conf.dataFormat",
-        "value" : "TEXT"
+        "value" : "JSON"
       }, {
         "name" : "conf.dataGeneratorFormatConfig.charset",
         "value" : "UTF-8"
@@ -659,11 +691,11 @@
       "uiInfo" : {
         "description" : "",
         "label" : "Write to Kafka Producer",
-        "xPos" : 1113,
-        "yPos" : 77,
+        "xPos" : 1314.624755859375,
+        "yPos" : 91.09902954101562,
         "stageType" : "TARGET"
       },
-      "inputLanes" : [ "ExpressionEvaluator_01OutputLane15240717312690" ],
+      "inputLanes" : [ "JSONGenerator_01OutputLane15242560883350" ],
       "outputLanes" : [ ],
       "eventLanes" : [ ],
       "services" : [ ]
@@ -687,20 +719,20 @@
       "services" : [ ]
     },
     "info" : {
-      "pipelineId" : "Testinga5958afc-5e7d-4d64-891d-7042ba2175c5",
+      "pipelineId" : "LogIngestcopy5adc3e97-735f-4956-950c-117bb9a81bb7",
       "title" : "LogIngest",
       "description" : "",
-      "created" : 1524063066687,
-      "lastModified" : 1524072348312,
+      "created" : 1524256111868,
+      "lastModified" : 1524280909444,
       "creator" : "ejohn001",
       "lastModifier" : "ejohn001",
       "lastRev" : "0",
-      "uuid" : "0b5fed5a-0a57-4862-8409-42e7e1dfbd33",
+      "uuid" : "806c82c9-ee23-41f1-8928-984ed49dd64c",
       "valid" : true,
       "metadata" : {
         "labels" : [ ]
       },
-      "name" : "Testinga5958afc-5e7d-4d64-891d-7042ba2175c5",
+      "name" : "LogIngestcopy5adc3e97-735f-4956-950c-117bb9a81bb7",
       "sdcVersion" : "3.1.0.0",
       "sdcId" : "0738d107-b440-11e7-9c4c-5b946534b7cf"
     },
@@ -747,9 +779,9 @@
     "previewable" : true,
     "valid" : true,
     "issues" : {
-      "issueCount" : 0,
       "stageIssues" : { },
-      "pipelineIssues" : [ ]
+      "pipelineIssues" : [ ],
+      "issueCount" : 0
     }
   },
   "pipelineRules" : {
@@ -813,7 +845,7 @@
     } ],
     "dataRuleDefinitions" : [ ],
     "driftRuleDefinitions" : [ ],
-    "uuid" : "bd39fe78-abd7-4e7c-b724-20086c1ee1c2",
+    "uuid" : "8cc4dbc1-ad93-4ee5-8a9a-831944bdb142",
     "configuration" : [ {
       "name" : "emailIDs",
       "value" : [ ]
