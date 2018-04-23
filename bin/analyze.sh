@@ -10,4 +10,4 @@
 --driver-memory 10g \
 --conf spark.driver.maxResultSize=8g \
 --conf spark.kryoserializer.buffer.max=512m \
-./analyze.py localhost:9093 test test log
+./analyze.py localhost:9093 test ddos_output_rule1 log
