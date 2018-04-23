@@ -41,7 +41,7 @@ def getSqlContextInstance(sparkContext):
 def insert_into_kudu(time,rdd):
     sqc = getSqlContextInstance(rdd.context)
     kudu_df = rdd.toDF(['ip','os']).dropDuplicates()
-	#kudu_df.write.format('org.apache.kudu.spark.kudu').option('kudu.master',"ip:7051").option('kudu.table',"ip_counts_last_30").mode("append").save()
+    kudu_df.write.format('org.apache.kudu.spark.kudu').option('kudu.master',"ip:7051").option('kudu.table',"ip_counts_last_30").mode("append").save()
 
 	
 if __name__ == "__main__":
