@@ -47,10 +47,10 @@ if __name__ == "__main__":
 	
 	sc = SparkContext(appName="LogAnalyzer")
 	ssc = StreamingContext(sc, 30)
-	ssc.checkpoint('checkpoint')
 	 
 	brokers, checkpoint, output, topic = sys.argv[1:]
-	
+	ssc.checkpoint(checkpoint)
+
 	# Create Kafka DStream
 	kvs=KafkaUtils.createStream(ssc, brokers, 'consumer1', {topic: 1})
 
