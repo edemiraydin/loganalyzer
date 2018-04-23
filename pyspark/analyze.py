@@ -52,7 +52,7 @@ if __name__ == "__main__":
 	brokers, checkpoint, output, topic = sys.argv[1:]
 	
 	# Create Kafka DStream
-	kvs=KafkaUtils.createStream(ssc, brokers, checkpoint, {topic: 1})
+	kvs=KafkaUtils.createStream(ssc, brokers, 'consumer1', {topic: 1})
 
 	#Get a DStream of JSON log entries
 	parsed = kvs.map(lambda v: json.loads(v))	
