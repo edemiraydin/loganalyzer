@@ -1,15 +1,13 @@
-CREATE TABLE `particle_test` (
-`coreid` STRING,
-`published_at` STRING,
-`data` STRING,
-`event` STRING,
-`ttl` BIGINT
+CREATE TABLE `ip_counts_last_30` (
+`ip` STRING,
+`os` STRING,
+`count` INT
 )
-DISTRIBUTE BY HASH (coreid) INTO 16 BUCKETS
+DISTRIBUTE BY HASH (ip) INTO 16 BUCKETS
 TBLPROPERTIES(
  'storage_handler' = 'com.cloudera.kudu.hive.KuduStorageHandler',
- 'kudu.table_name' = 'particle_test',
- 'kudu.master_addresses' = 'ip-10-0-0-224.ec2.internal:7051',
- 'kudu.key_columns' = 'coreid,published_at',
+ 'kudu.table_name' = 'p_counts_last_30',
+ 'kudu.master_addresses' = 'xx:7051',
+ 'kudu.key_columns' = 'ip',
  'kudu.num_tablet_replicas' = '3'
 );
