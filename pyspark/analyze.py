@@ -31,7 +31,7 @@ import json
 ##########################################
 def analyze_ip_count(dstream):
 	#Check counts of IPs by key
-	r1_parsed= parsed.map(lambda log: (log['clientip'],1)).\
+	r1_parsed= dstream.map(lambda log: (log['clientip'],1)).\
 			reduceByKey(lambda x,y: x + y)
 		
 	# Get a list of potential malicious IPs based on Rule 1
