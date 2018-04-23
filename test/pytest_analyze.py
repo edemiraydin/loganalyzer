@@ -58,8 +58,7 @@ def test_analyze(spark_context, streaming_context):
 
     test_input = [
             '{"agent":"\"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; SV1)\"","clientip":"200.4.91.190","timestamp":1432595475000,"os":"compatible; MSIE 6.0; Windows NT 5.1; SV1"}',
-            '{"agent":"\"Mozilla/5.0 (Windows; U; Windows NT 5.0; ja-JP; rv:1.7.12) Gecko/20050919 Firefox/1.0.7\"","clientip":"209.112.47.220","timestamp":1432595475000,"os":"Windows; U; Windows NT 5.0; ja-JP; rv:1.7.12"}'
-                 [
+            '{"agent":"\"Mozilla/5.0 (Windows; U; Windows NT 5.0; ja-JP; rv:1.7.12) Gecko/20050919 Firefox/1.0.7\"","clientip":"209.112.47.220","timestamp":1432595475000,"os":"Windows; U; Windows NT 5.0; ja-JP; rv:1.7.12"}',
             ' {"agent":"\"Mozilla/5.0 (Windows; U; Windows NT 5.0; ja-JP; rv:1.7.12) Gecko/20050919 Firefox/1.0.7\"","clientip":"155.157.99.22","timestamp":1432595475000,"os":"Windows; U; Windows NT 5.0; ja-JP; rv:1.7.12"},
 			'{"agent":"\"Mozilla/4.0 (compatible; MSIE 6.0; Windows NT 5.1; en) Opera 8.51\"","clientip":"200.4.91.190","timestamp":1432595475000,"os":"compatible; MSIE 6.0; Windows NT 5.1; en"}'
         ]
