@@ -6,7 +6,7 @@
 
 
 topic_names=("log")
-zookeeper=ahlclotxpla705.evv1.ah-isd.net:2181/kafka
+zookeeper=<server>:2181/kafka
 replication_factor=2
 partition=3
 
